@@ -83,11 +83,29 @@ const docs = [
   }),
   defineCollection({
     type: 'doc',
+    dir: 'ComputerVision/YOLOSeries',
+    linkPrefix: '/ComputerVision/YOLOSeries',
+    title: 'YOLO 系列',
+    autoFrontmatter: false,
+    sidebar: [
+      { text: '总览', items: ['01_YOLOv8_Detection'] },
+      { text: '网络结构', items: ['02_C2f', '03_SPPF', '04_FPN_PAN', '05_DetectHead'] },
+      { text: '推理过程', items: ['06_LetterBox', '07_BoxDecode', '08_NMS'] },
+      { text: '训练过程', items: ['09_TaskAlignedAssigner', '10_CIoU_BoxLoss', '11_YOLOv8_ClassLoss', '12_DFL_Loss'] },
+      { text: '实践', items: ['13_FewImageOverfit'] },
+    ],
+  }),
+  defineCollection({
+    type: 'doc',
     dir: 'ComputerVision',
     linkPrefix: '/ComputerVision',
     title: '计算机视觉',
     autoFrontmatter: false,
-    sidebar: 'auto',
+    sidebar: [
+      { text: '图像处理', prefix: 'ImageProcessing', items: 'auto' },
+      { text: '图像生成', prefix: 'ImageGeneration', items: 'auto' },
+      { text: '目标检测', prefix: 'TargetDetection', items: 'auto' },
+    ],
   }),
   defineCollection({
     type: 'doc',

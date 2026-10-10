@@ -29,6 +29,7 @@ export default defineNavbarConfig([
       { text: '图像处理', link: '/ComputerVision/ImageProcessing/OpenCV1/01_综述' },
       { text: '图像生成', link: '/ComputerVision/ImageGeneration/01_综述' },
       { text: '目标检测', link: '/ComputerVision/TargetDetection/01_综述' },
+      { text: 'YOLO 系列', link: '/ComputerVision/YOLOSeries/01_YOLOv8_Detection' },
     ],
   },
   {
