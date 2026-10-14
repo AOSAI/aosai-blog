@@ -1,4 +1,4 @@
-"""Generate the three instructional figures for 03_SPPF.md.
+"""Generate the flow and sliding-window figures for 03_SPPF.md.
 
 Run from the repository root: python3 scripts/image_gen/sppf_figures.py
 """
@@ -121,73 +121,46 @@ def flow_figure():
 
 
 def maxpool_figure():
-    fig, ax = setup(9.6, 5.0, (0, 9.6), (0, 5.0))
-    ax.text(4.8, 4.62, "一次 5×5 最大池化：只取窗口中的最大值", ha="center", fontsize=20, color=INK, weight="bold")
+    fig, ax = setup(13.6, 6.5, (0, 13.6), (0, 6.5))
+    ax.text(6.8, 6.08, "同一张 7×7 特征图：5×5 窗口滑动一格", ha="center", fontsize=22, color=INK, weight="bold")
     values = [
-        [1, 0, 2, 1, 0],
-        [0, 3, 1, 2, 1],
-        [2, 1, 4, 0, 2],
-        [1, 0, 2, 9, 1],
-        [0, 1, 2, 1, 0],
+        [0, 1, 0, 2, 1, 0, 2],
+        [1, 1, 0, 2, 1, 0, 2],
+        [0, 0, 3, 1, 2, 1, 4],
+        [2, 2, 1, 4, 0, 2, 10],
+        [1, 1, 0, 2, 9, 1, 1],
+        [0, 0, 1, 2, 1, 0, 3],
+        [1, 2, 0, 1, 0, 1, 0],
     ]
-    x0, y0, s = 0.98, 0.8, 0.67
-    for row in range(5):
-        for col in range(5):
-            value = values[row][col]
-            x, y = x0 + col * s, y0 + (4 - row) * s
-            ax.add_patch(
-                Rectangle(
-                    (x, y), s, s,
-                    facecolor=CORAL_LIGHT if value == 9 else "#F5F8FA",
-                    edgecolor=CORAL if value == 9 else GRID,
-                    linewidth=2 if value == 9 else 0.9,
+    y0, s = 1.34, 0.52
+    panels = [
+        (0.85, 1, (4, 4), "① 当前窗口", "输出位置 (i, j)：9"),
+        (9.10, 2, (3, 6), "② 右移一格", "输出位置 (i, j+1)：10"),
+    ]
+    for x0, first_col, winner, heading, result in panels:
+        ax.text(x0 + 3.5 * s, 5.32, heading, ha="center", fontsize=17, color=INK, weight="bold")
+        for row in range(7):
+            for col in range(7):
+                selected = 1 <= row <= 5 and first_col <= col < first_col + 5
+                is_winner = (row, col) == winner
+                x, y = x0 + col * s, y0 + (6 - row) * s
+                ax.add_patch(
+                    Rectangle(
+                        (x, y), s, s,
+                        facecolor=CORAL_LIGHT if is_winner else TEAL_LIGHT if selected else "#F6F8FA",
+                        edgecolor=CORAL if is_winner else GRID,
+                        linewidth=2 if is_winner else 0.8,
+                    )
                 )
-            )
-            ax.text(x + s / 2, y + s / 2, str(value), ha="center", va="center", fontsize=18, color=CORAL if value == 9 else INK, weight="bold" if value == 9 else "normal")
-    ax.text(2.65, 0.48, "输入特征图上的一个 5×5 窗口", ha="center", fontsize=13, color=MUTED)
-    arrow(ax, (4.72, 2.47), (6.16, 2.47), CORAL, 2)
-    ax.text(5.44, 2.77, "max", ha="center", fontsize=16, color=CORAL, weight="bold")
-    box(ax, 6.18, 1.73, 1.46, 1.46, "9", stroke=CORAL, fill=CORAL_LIGHT, title_size=22)
-    ax.text(6.91, 1.36, "当前位置的输出", ha="center", fontsize=13, color=MUTED)
+                ax.text(x + s / 2, y + s / 2, str(values[row][col]), ha="center", va="center", fontsize=14, color=CORAL if is_winner else INK, weight="bold" if is_winner else "normal")
+        ax.add_patch(Rectangle((x0 + first_col * s, y0 + s), 5 * s, 5 * s, fill=False, edgecolor=TEAL, linewidth=2.8))
+        box(ax, x0 + 0.15, 0.33, 3.34, 0.58, result, stroke=CORAL, fill=CORAL_LIGHT, title_size=15)
+
+    arrow(ax, (4.86, 3.15), (8.73, 3.15), TEAL, 2.2)
+    ax.text(6.8, 3.55, "窗口向右滑动 1 格\nstride = 1", ha="center", va="center", fontsize=15, color=TEAL, weight="bold")
     save(fig, "03_sppf_maxpool.png")
-
-
-def range_figure():
-    fig, ax = setup(11.5, 6.6, (0, 11.5), (0, 6.6))
-    ax.text(5.75, 6.12, "在 20×20 特征图上，查看范围逐次扩大", ha="center", fontsize=20, color=INK, weight="bold")
-    x0, y0, cell = 0.75, 0.85, 0.245
-    for row in range(20):
-        for col in range(20):
-            dist = max(abs(row - 10), abs(col - 10))
-            fill = "white"
-            if dist <= 6:
-                fill = "#F2EEF9"
-            if dist <= 4:
-                fill = "#DEE5F5"
-            if dist <= 2:
-                fill = "#DDF5F1"
-            if dist == 0:
-                fill = CORAL
-            ax.add_patch(Rectangle((x0 + col * cell, y0 + (19 - row) * cell), cell, cell, facecolor=fill, edgecolor=GRID, linewidth=0.43))
-    for radius, color, lw in [(6, PURPLE, 2.3), (4, "#7184C1", 2.3), (2, TEAL, 2.3)]:
-        ax.add_patch(Rectangle((x0 + (10 - radius) * cell, y0 + (19 - (10 + radius)) * cell), (2 * radius + 1) * cell, (2 * radius + 1) * cell, fill=False, edgecolor=color, linewidth=lw))
-    ax.text(3.2, 0.47, "同一张 20×20 网格", ha="center", fontsize=15, color=MUTED)
-
-    legend = [
-        (4.78, CORAL, "中心格", "当前要计算的输出位置"),
-        (3.62, TEAL, "5×5", "池化 1 次可查看的范围"),
-        (2.46, "#7184C1", "9×9", "池化 2 次可查看的范围"),
-        (1.30, PURPLE, "13×13", "池化 3 次可查看的范围"),
-    ]
-    for y, color, label, detail in legend:
-        ax.add_patch(Rectangle((6.38, y - 0.13), 0.34, 0.34, facecolor=color, edgecolor=color))
-        ax.text(6.95, y + 0.05, label, va="center", fontsize=16, color=INK, weight="bold")
-        ax.text(8.22, y + 0.05, detail, va="center", fontsize=14, color=MUTED)
-    ax.text(8.65, 0.43, "窗口变大；输出高宽仍是 20×20", ha="center", fontsize=15, color=CORAL, weight="bold")
-    save(fig, "03_sppf_ranges.png")
 
 
 if __name__ == "__main__":
     flow_figure()
     maxpool_figure()
-    range_figure()

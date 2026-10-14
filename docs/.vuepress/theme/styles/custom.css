@@ -49,6 +49,25 @@
   */
 }
 
+/* YOLO 专题中首次出现的术语使用黄色标记。 */
+.sppf-article mark,
+.fpn-article mark {
+  --vp-mark-linear-color: #ffe46b;
+}
+
+[data-theme="dark"] .sppf-article mark,
+[data-theme="dark"] .fpn-article mark {
+  --vp-mark-linear-color: #806500;
+}
+
+.vp-doc-title .page-title,
+.vp-doc h2,
+.vp-doc h3,
+.vp-doc h2 strong,
+.vp-doc h3 strong {
+  font-weight: 700;
+}
+
 @media (orientation: landscape) {
   .vp-doc .layout {
     display: flex;
