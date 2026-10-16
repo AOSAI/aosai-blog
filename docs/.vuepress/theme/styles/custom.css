@@ -49,15 +49,13 @@
   */
 }
 
-/* YOLO 专题中首次出现的术语使用黄色标记。 */
-.sppf-article mark,
-.fpn-article mark {
+/* 全站 Markdown 高亮统一使用黄色。 */
+.vp-doc mark {
   --vp-mark-linear-color: #ffe46b;
 }
 
-[data-theme="dark"] .sppf-article mark,
-[data-theme="dark"] .fpn-article mark {
-  --vp-mark-linear-color: #806500;
+[data-theme="dark"] .vp-doc mark {
+  --vp-mark-linear-color: #b89a22;
 }
 
 .vp-doc-title .page-title,

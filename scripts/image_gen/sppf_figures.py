@@ -86,6 +86,51 @@ def save(fig, name):
     plt.close(fig)
 
 
+def parallel_overlap_figure():
+    fig, ax = setup(17.6, 7.5, (0, 17.6), (0, 7.5))
+    ax.text(8.8, 7.08, "SPP：三个池化窗口各自查看同一组特征", ha="center",
+            fontsize=23, color=INK, weight="bold")
+    ax.text(8.8, 6.63, "固定一个输出位置；三幅图使用相同的 13×13 坐标网格", ha="center",
+            fontsize=14, color=MUTED)
+
+    step = 0.28
+    grid_bottom = 2.06
+    panels = [
+        (1.20, 5, "5×5 MaxPool", "查看 25 格", TEAL),
+        (6.98, 9, "9×9 MaxPool", "查看 81 格，含前 25 格", PURPLE),
+        (12.76, 13, "13×13 MaxPool", "查看 169 格，含前 81 格", CORAL),
+    ]
+    for left, size, title, count, stroke in panels:
+        ax.text(left + 6.5 * step, 6.13, title, ha="center", va="center",
+                fontsize=17, color=INK, weight="bold")
+        radius = size // 2
+        for row in range(13):
+            for col in range(13):
+                distance = max(abs(row - 6), abs(col - 6))
+                if distance <= radius:
+                    fill = CORAL_LIGHT if distance > 4 else PURPLE_LIGHT if distance > 2 else TEAL_LIGHT
+                else:
+                    fill = "#F6F8FA"
+                if (row, col) == (6, 6):
+                    fill = "#F7C967"
+                ax.add_patch(Rectangle(
+                    (left + col * step, grid_bottom + (12 - row) * step), step, step,
+                    facecolor=fill, edgecolor=GRID, linewidth=0.45,
+                ))
+        offset = (13 - size) // 2
+        ax.add_patch(Rectangle(
+            (left + offset * step, grid_bottom + offset * step),
+            size * step, size * step, fill=False, edgecolor=stroke, linewidth=2.6,
+        ))
+        ax.text(left + 6.5 * step, 1.72, count, ha="center", va="center",
+                fontsize=13.5, color=MUTED)
+
+    box(ax, 1.15, 0.45, 15.30, 0.78,
+        "中心 5×5 在三路中都被查看；并行计算没有利用前一路的池化结果。",
+        stroke=PURPLE, fill=PURPLE_LIGHT, title_size=16)
+    save(fig, "03_spp_parallel_overlap.png")
+
+
 def flow_figure():
     fig, ax = setup(17, 6.9, (0, 17), (0, 6.9))
     ax.text(8.5, 6.48, "SPPF：连续池化后汇合四种查看范围", ha="center", fontsize=24, color=INK, weight="bold")
@@ -162,5 +207,6 @@ def maxpool_figure():
 
 
 if __name__ == "__main__":
+    parallel_overlap_figure()
     flow_figure()
     maxpool_figure()

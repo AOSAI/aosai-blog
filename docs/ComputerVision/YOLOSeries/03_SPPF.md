@@ -11,15 +11,31 @@ tags:
   - 网络结构
 ---
 
-## **1. SPPF 是什么**
+## **1. SPPF 为什么出现**
 
-==快速空间金字塔池化（Spatial Pyramid Pooling - Fast，SPPF）== 接收一组 ==特征图（Feature Map）==，输出另一组**高宽不变**的特征图。若输入形状为 $C_{\text{in}}\times H\times W$，$C_{\text{in}}$ 是 ==通道数（Number of Channels）==，$H\times W$ 是**每个通道**的高和宽。例如 `256×20×20` 表示 256 张大小为 `20×20` 的特征图叠在一起。
+### **1.1 为什么需要看不同范围**
 
-SPPF 让输出的每个位置结合本位置的数值和周围不同范围内取到的最大值；这里的“范围”指特征图上的格子，不是原图的像素。
+检测一张图中大小不同的物体时，深层==特征图（Feature Map）==上的一个位置，既可能需要附近的线索，也可能需要更大范围的周边信息。若这一层只在一种大小的邻域内汇集信息，它就只提供这一种范围的结果。YOLO 系列因此在深层特征上保留本位置的信息，并汇集几个不同范围的邻域结果，让后续卷积决定怎样组合。[YOLOv4 论文第 2.3、3.1 节](https://arxiv.org/html/2004.10934)
 
-以 [Ultralytics v8.3.0 的 SPPF 实现](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/nn/modules/block.py#L2451-L2482)为准，它由入口 ==1×1 卷积（Conv2d，kernel_size=1）==、连续三次 `5×5` ==最大池化（MaxPool2d）==、==按通道拼接（Concatenation，Concat）== 和出口 `1×1` 卷积组成。记一次池化为 $M_5$，数据流如下：
+### **1.2 YOLO 中的 SPP 怎样做，代价在哪**
 
-![Fig.1 SPPF 的串行池化与四路拼接](/ComputerVision/YOLOSeries/03_sppf_flow.png)
+名字相同，先要分清两种做法：早期的==空间金字塔池化（Spatial Pyramid Pooling，SPP）==网络把特征图划分成不同层级的网格，在各格内池化，最后拼成**固定长度向量**，主要为了解决后续全连接层要求固定输入尺寸的问题。YOLO 中使用的 SPP 变体则要**保留特征图的高宽**，用于扩大每个位置可汇集信息的范围；它不是把整张特征图压成一个向量。[SPP-net 原论文第 1、2 节](https://arxiv.org/html/1406.4729)；[YOLOv4 论文第 2.3 节](https://arxiv.org/html/2004.10934)
+
+具体做法是对入口卷积后的同一组特征图，并行做 `5×5`、`9×9`、`13×13` ==最大池化（MaxPool2d）==，再与未池化的结果拼接。各分支步长为 `1`，输出高宽不变；每个位置因此得到三种邻域范围内的最大值。[Ultralytics v8.3.0 的 SPP 源码](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/nn/modules/block.py#L2426-L2449)
+
+瓶颈出在三路**各自从同一组输入取最大值**。对同一位置，`9×9` 窗口包含 `5×5`，`13×13` 又包含 `9×9`；大窗口计算时仍要查看小窗口已覆盖的格子。图 1 只画一个通道、一个输出位置：直接按窗口逐格计算，三路分别查看 `25、81、169` 个格子，合计 `275` 次查看，范围有大量重叠。整组特征图上的每个位置都要执行这三路池化。[SPP 源码](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/nn/modules/block.py#L2426-L2449)
+
+![Fig.1 SPP 对同一位置并行使用 5×5、9×9、13×13 窗口，较大的范围包含较小范围](/ComputerVision/YOLOSeries/03_spp_parallel_overlap.png)
+
+### **1.3 SPPF 怎样减少重复计算**
+
+==快速空间金字塔池化（Spatial Pyramid Pooling - Fast，SPPF）== 要解决的是**上述 YOLO 式 SPP 的计算开销**，不是原始 SPP-net 的固定长度输入问题。它把三个并行池化核改成**连续三次 `5×5` 最大池化**：第二次读取第一次算完的整组特征图，第三次读取第二次的整组结果。三组输出相对入口卷积后的特征，分别覆盖 `5×5`、`9×9`、`13×13` 范围；因为“最大值的最大值”仍是整个范围的最大值，它们与前述 SPP 的池化结果相同。每轮复用上一轮结果，减少了直接使用三个大窗口的计算。提出 SPPF 的 YOLOv5 改动记录也以**结果等价、运算更少、运行更快**作为目标。[YOLOv5 SPPF 引入记录](https://github.com/ultralytics/yolov5/pull/4420)；[Ultralytics v8.3.0 的 SPPF 源码](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/nn/modules/block.py#L2451-L2482)
+
+SPPF 接收一组特征图，输出另一组**高宽不变**的特征图，让每个输出位置同时利用本位置和周围不同范围内的最大响应。若输入形状为 $C_{\text{in}}\times H\times W$，$C_{\text{in}}$ 是 ==通道数（Number of Channels）==，$H\times W$ 是**每个通道**的高和宽。例如 `256×20×20` 表示 256 张大小为 `20×20` 的特征图叠在一起。这里的“范围”指特征图上的格子，不是原图的像素。
+
+以 [Ultralytics v8.3.0 的 SPPF 实现](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/nn/modules/block.py#L2451-L2482)为准，它由入口 ==1×1 卷积（Conv2d，kernel_size=1）==、连续池化、==按通道拼接（Concatenation，Concat）== 和出口 `1×1` 卷积组成。记一次池化为 $M_5$，数据流如下：
+
+![Fig.2 SPPF 的串行池化与四路拼接](/ComputerVision/YOLOSeries/03_sppf_flow.png)
 
 ## **2. 数学公式与原理**
 
@@ -35,13 +51,13 @@ $$
 
 下图先从一张 `7×7` 特征图里框出 `5×5` 窗口，得到最大值 `9`；窗口向右滑动一格后，再计算下一个输出位置：
 
-![Fig.2 5×5 最大池化窗口在 7×7 特征图上向右滑动一格](/ComputerVision/YOLOSeries/03_sppf_maxpool.png)
+![Fig.3 5×5 最大池化窗口在 7×7 特征图上向右滑动一格](/ComputerVision/YOLOSeries/03_sppf_maxpool.png)
 
 左图的 `10` 在窗口外，所以第一个输出是 `9`；窗口右移后，`10` 进入窗口，下一位置输出 `10`。两个窗口的中心分别对应公式中的 $(i,j)$ 和 $(i,j+1)$。
 
 SPPF 中的 ==池化核大小（kernel_size，$k$）== 为 `5`，==步长（stride，$s$）== 为 `1`，==边缘填充（padding，$p$）== 为 `2`。这里的 `p=2` 指**上、下各补两行，左、右各补两列**，相当于外围补两圈。这些是计算时使用的虚拟格子，不会永久加到输出上；三次池化每次都按同一规则处理自己的输入。窗口每次移动一格，即使走到特征图边缘，也能以边缘格子为中心计算输出。
 
-例如计算左上角的输出 $(i,j)=(0,0)$：`5×5` 窗口会查看行号、列号各为 `-2` 到 `2` 的位置。原特征图中只有行号 `0、1、2` 与列号 `0、1、2` 交叉形成的 **`3×3` 个真实格子**；其余 `16` 个越界位置，==PyTorch== 最大池化按 $-\infty$ 处理，不会抢走最大值。图 2 展示的是不越界的内部窗口。[`MaxPool2d` 官方文档](https://docs.pytorch.org/docs/stable/generated/torch.nn.MaxPool2d.html)。
+例如计算左上角的输出 $(i,j)=(0,0)$：`5×5` 窗口会查看行号、列号各为 `-2` 到 `2` 的位置。原特征图中只有行号 `0、1、2` 与列号 `0、1、2` 交叉形成的 **`3×3` 个真实格子**；其余 `16` 个越界位置，==PyTorch== 最大池化按 $-\infty$ 处理，不会抢走最大值。图 3 展示的是不越界的内部窗口。[`MaxPool2d` 官方文档](https://docs.pytorch.org/docs/stable/generated/torch.nn.MaxPool2d.html)。
 
 由于窗口每次只移动一格，`k=5、s=1、p=2` 不会像常见的 `stride=2` 池化那样缩小特征图。按输出尺寸公式，$H_{\text{out}}=\lfloor(H+2p-k)/s\rfloor+1=H$；宽度同理。
 
@@ -58,9 +74,9 @@ $$
 
 每个 $z$ 都是一组**完整的特征图**，不是一个局部窗口。计算 $z_1$ 时，所有窗口都只读取 $z_0$；整组 $z_1$ 算完后，计算 $z_2$ 才读取 $z_1$。同一轮不会把刚算出的结果立刻当作下一窗口的输入。
 
-图 3 固定观察每组特征图的同一个位置 $(10,10)$，把**可能影响这个输出的 $z_0$ 位置**画在同一张 `20×20` 网格上。颜色表示覆盖范围，不表示格子里的数值：橙色是选定位置，浅青色是上一阶段已经覆盖的范围，深蓝色是本阶段增加的范围。
+图 4 固定观察每组特征图的同一个位置 $(10,10)$，把**可能影响这个输出的 $z_0$ 位置**画在同一张 `20×20` 网格上。颜色表示覆盖范围，不表示格子里的数值：橙色是选定位置，浅青色是上一阶段已经覆盖的范围，深蓝色是本阶段增加的范围。
 
-![Fig.3 固定一个输出位置，三次池化后它在 z0 上覆盖的范围依次为 5×5、9×9、13×13](/ComputerVision/YOLOSeries/03_sppf_stages.png)
+![Fig.4 固定一个输出位置，三次池化后它在 z0 上覆盖的范围依次为 5×5、9×9、13×13](/ComputerVision/YOLOSeries/03_sppf_stages.png)
 
 | 结果 | 本轮读取的完整图 | 实际窗口 | 每通道输出尺寸 | 一个位置回看 $z_0$ 的范围 |
 | --- | --- | --- | --- | --- |
