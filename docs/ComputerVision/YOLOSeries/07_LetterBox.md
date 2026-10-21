@@ -6,7 +6,7 @@ categories:
 tags:
   - YOLO
   - YOLOv8
-  - 推理
+  - 预处理
 ---
 
 ## 内容待补充

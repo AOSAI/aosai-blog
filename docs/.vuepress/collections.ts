@@ -90,8 +90,9 @@ const docs = [
     sidebar: [
       { text: '总览', items: ['01_YOLOv8_Detection'] },
       { text: '网络结构', items: ['02_C2f', '03_SPPF', '04_FPN', '05_PANet', '06_DetectHead'] },
-      { text: '推理过程', items: ['07_LetterBox', '08_BoxDecode', '09_NMS'] },
-      { text: '训练过程', items: ['10_TaskAlignedAssigner', '11_CIoU_BoxLoss', '12_YOLOv8_ClassLoss', '13_DFL_Loss'] },
+      { text: '数据处理', items: ['07_LetterBox', '10_TaskAlignedAssigner'] },
+      { text: '预测解码与筛选', items: ['08_BoxDecode', '09_NMS'] },
+      { text: '损失函数', items: ['11_CIoU_BoxLoss', '12_YOLOv8_ClassLoss', '13_DFL_Loss'] },
       { text: '实践', items: ['14_FewImageOverfit'] },
     ],
   }),
