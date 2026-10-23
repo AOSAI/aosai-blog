@@ -118,14 +118,14 @@ $$
 
 预测时不再提供真实框，模型只根据图像输出检测结果。传统检测器一般还要筛掉低置信度和重复的预测；端到端检测器则可以直接输出一组结果。
 
-评价时，类别正确还不够，位置也要正确。通常先用 **[交并比（Intersection over Union，IoU）](../EvaluationMetrics/03_ObjectDetectionMetrics.md)** 衡量预测框和真实框的重叠程度：
+评价时，类别正确还不够，位置也要正确。通常先用 **[交并比（Intersection over Union，IoU）](../EvaluationMetrics/07_IoU.md)** 衡量预测框和真实框的重叠程度：
 
 $$
 IoU=\frac{\text{预测框与真实框的交集面积}}
 {\text{预测框与真实框的并集面积}}
 $$
 
-在此基础上，再用 [AP](../EvaluationMetrics/03_ObjectDetectionMetrics.md) 衡量一个类别在不同置信度阈值下的检测效果，用 mAP 对多个类别或多个 IoU 阈值求平均。具体平均方式由 VOC、COCO 等评价协议决定。
+在此基础上，再用 [AP](../EvaluationMetrics/11_AP.md) 衡量一个类别在不同置信度阈值下的检测效果，用 [mAP](../EvaluationMetrics/12_mAP.md) 对多个类别或多个 IoU 阈值求平均。具体平均方式由 VOC、COCO 等评价协议决定。
 
 ## 2. 目标检测必须解决哪些设计问题？
 
@@ -386,7 +386,7 @@ $$
 - 没有配对的 Query 学习“无目标”。
 - 一个真实目标只交给一个 Query，模型因此学会减少重复输出。
 
-这里还要和 [AP 评价中的预测框匹配](../EvaluationMetrics/03_ObjectDetectionMetrics.md#_2-1-怎样确定-tp、fp-和-fn)区分开：
+这里还要和 [AP 评价中的预测框匹配](../EvaluationMetrics/11_AP.md#_1-1-怎样确定-tp、fp-和-fn)区分开：
 
 - **匈牙利匹配**：DETR 训练时使用，根据类别和边界框代价分配监督关系。
 - **AP 匹配**：模型预测完成后使用，根据置信度顺序和 IoU 阈值判断 TP、FP、FN。

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LetterBox 在 YOLOv8 检测流程中的位置</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 32px; background: #fbfcfe; color: #30343f; font-family: 'Geist', 'Noto Sans CJK SC', 'PingFang SC', sans-serif; }
+    main { max-width: 1440px; margin: auto; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    svg { display: block; width: 100%; min-width: 1440px; }
+    @media print { .diagram-container { overflow-x: visible; } svg { min-width: 0; } }
+  </style>
+</head>
+<body>
+<main>
+  <div class="diagram-container">
+    <svg xmlns="http://www.w3.org/2000/svg" width="1440" height="600" viewBox="0 0 1440 600" role="img" aria-labelledby="letterbox-pipeline-title letterbox-pipeline-desc">
+      <title id="letterbox-pipeline-title">LetterBox 在 YOLOv8 检测流程中的位置</title>
+      <desc id="letterbox-pipeline-desc">主线从原图经目标形状、等比缩放、填充进入 YOLOv8，推理后经过框解码和筛选，再把框坐标还原；训练标注使用同一组缩放和填充参数。</desc>
+      <defs>
+        <marker id="pipeline-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0 0 L10 4 L0 8 Z" fill="#667085"/></marker>
+        <marker id="pipeline-arrow-teal" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0 0 L10 4 L0 8 Z" fill="#0f8e8a"/></marker>
+        <marker id="pipeline-arrow-purple" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0 0 L10 4 L0 8 Z" fill="#6e5aab"/></marker>
+      </defs>
+
+      <rect width="1440" height="600" fill="#fbfcfe"/>
+      <text x="64" y="57" fill="#30343f" font-size="30" font-weight="600" font-family="'Geist','Noto Sans CJK SC',sans-serif">一张照片怎样进模型，预测框怎样回原图</text>
+      <text x="64" y="90" fill="#667085" font-size="17" font-family="'Geist','Noto Sans CJK SC',sans-serif">按图中 ①—⑤ 追踪输入尺寸、LetterBox、训练标注与推理结果</text>
+
+      <!-- The tinted region is the forward LetterBox operation. -->
+      <rect x="576" y="122" width="504" height="166" rx="8" fill="#e7f6f4" stroke="#b5dcda" stroke-width="1.5"/>
+      <text x="596" y="148" fill="#0c716d" font-size="15" font-weight="600" font-family="'Geist','Noto Sans CJK SC',sans-serif">LETTERBOX · 正向几何变换</text>
+
+      <!-- Connectors are behind nodes. -->
+      <path d="M272 220 H328" fill="none" stroke="#667085" stroke-width="2.5" marker-end="url(#pipeline-arrow)"/>
+      <path d="M536 220 H592" fill="none" stroke="#0f8e8a" stroke-width="2.5" marker-end="url(#pipeline-arrow-teal)"/>
+      <path d="M800 220 H856" fill="none" stroke="#0f8e8a" stroke-width="2.5" marker-end="url(#pipeline-arrow-teal)"/>
+      <path d="M1064 220 H1120" fill="none" stroke="#667085" stroke-width="2.5" marker-end="url(#pipeline-arrow)"/>
+      <path d="M1224 260 V382" fill="none" stroke="#667085" stroke-width="2.5" marker-end="url(#pipeline-arrow)"/>
+      <path d="M1120 422 H1064" fill="none" stroke="#6e5aab" stroke-width="2.5" marker-end="url(#pipeline-arrow-purple)"/>
+      <path d="M856 422 H800" fill="none" stroke="#6e5aab" stroke-width="2.5" marker-end="url(#pipeline-arrow-purple)"/>
+      <path d="M168 260 V422 H328" fill="none" stroke="#667085" stroke-width="2.5" marker-end="url(#pipeline-arrow)"/>
+      <path d="M960 260 V324 H432 V382" fill="none" stroke="#0f8e8a" stroke-width="2.5" stroke-dasharray="6 5" marker-end="url(#pipeline-arrow-teal)"/>
+
+      <!-- Labels sit clear of connector strokes. -->
+      <rect x="1236" y="310" width="50" height="24" rx="3" fill="#fbfcfe"/>
+      <text x="1261" y="327" text-anchor="middle" fill="#667085" font-size="15" font-family="'Geist','Noto Sans CJK SC',sans-serif">推理</text>
+      <rect x="206" y="384" width="50" height="24" rx="3" fill="#fbfcfe"/>
+      <text x="231" y="401" text-anchor="middle" fill="#667085" font-size="15" font-family="'Geist','Noto Sans CJK SC',sans-serif">训练</text>
+      <rect x="584" y="286" width="206" height="24" rx="3" fill="#fbfcfe"/>
+      <text x="687" y="303" text-anchor="middle" fill="#0c716d" font-size="15" font-family="'Geist','Noto Sans CJK SC',sans-serif">共用缩放比例与填充量</text>
+
+      <!-- Main row. -->
+      <rect x="64" y="180" width="208" height="80" rx="22" fill="#ffffff" stroke="#bfc7d3" stroke-width="1.8"/>
+      <text x="168" y="215" text-anchor="middle" fill="#30343f" font-size="20" font-weight="600" font-family="'Geist','Noto Sans CJK SC',sans-serif">原图</text>
+      <text x="168" y="242" text-anchor="middle" fill="#667085" font-size="15" font-family="'Geist','Noto Sans CJK SC',sans-serif">宽高各不相同</text>
+
+      <rect x="328" y="180" width="208" height="80" rx="7" fill="#ffffff" stroke="#adb7c6" stroke-width="1.8"/>
+      <text x="432" y="215" text-anchor="middle" fill="#30343f" font-size="20" font-weight="600" font-family="'Geist','Noto Sans CJK SC',sans-serif">① 选输入形状</text>
+      <text x="432" y="242" text-anchor="middle" fill="#667085" font-size="15" font-family="'Geist','Noto Sans CJK SC',sans-serif">同批图片要一样大</text>
+
+      <rect x="592" y="180" width="208" height="80" rx="7" fill="#ffffff" stroke="#0f8e8a" stroke-width="2.3"/>
+      <text x="696" y="215" text-anchor="middle" fill="#0c716d" font-size="20" font-weight="600" font-family="'Geist','Noto Sans CJK SC',sans-serif">② 等比缩放</text>
+      <text x="696" y="242" text-anchor="middle" fill="#667085" font-size="15" font-family="'Geist','Noto Sans CJK SC',sans-serif">物体不被拉扁</text>
+
+      <rect x="856" y="180" width="208" height="80" rx="7" fill="#ffffff" stroke="#0f8e8a" stroke-width="2.3"/>
+      <text x="960" y="215" text-anchor="middle" fill="#0c716d" font-size="20" font-weight="600" font-family="'Geist','Noto Sans CJK SC',sans-serif">③ 填补空白</text>
+      <text x="960" y="242" text-anchor="middle" fill="#667085" font-size="15" font-family="'Geist','Noto Sans CJK SC',sans-serif">图像进入目标画布</text>
+
+      <rect x="1120" y="180" width="208" height="80" rx="7" fill="#ffffff" stroke="#adb7c6" stroke-width="1.8"/>
+      <text x="1224" y="215" text-anchor="middle" fill="#30343f" font-size="20" font-weight="600" font-family="'Geist','Noto Sans CJK SC',sans-serif">整理张量 → 模型</text>
+      <text x="1224" y="242" text-anchor="middle" fill="#667085" font-size="15" font-family="'Geist','Noto Sans CJK SC',sans-serif">RGB · BCHW · /255</text>
+
+      <!-- Training and inference branches. -->
+      <rect x="328" y="382" width="208" height="80" rx="7" fill="#eef9f8" stroke="#0f8e8a" stroke-width="2.1"/>
+      <text x="432" y="417" text-anchor="middle" fill="#0c716d" font-size="20" font-weight="600" font-family="'Geist','Noto Sans CJK SC',sans-serif">④ 标注框同步</text>
+      <text x="432" y="444" text-anchor="middle" fill="#667085" font-size="15" font-family="'Geist','Noto Sans CJK SC',sans-serif">训练时，同样缩放和移动</text>
+
+      <rect x="592" y="382" width="208" height="80" rx="22" fill="#ffffff" stroke="#bfc7d3" stroke-width="1.8"/>
+      <text x="696" y="417" text-anchor="middle" fill="#30343f" font-size="20" font-weight="600" font-family="'Geist','Noto Sans CJK SC',sans-serif">原图上的结果</text>
+      <text x="696" y="444" text-anchor="middle" fill="#667085" font-size="15" font-family="'Geist','Noto Sans CJK SC',sans-serif">框回到照片原坐标</text>
+
+      <rect x="856" y="382" width="208" height="80" rx="7" fill="#f3f0fa" stroke="#6e5aab" stroke-width="2.3"/>
+      <text x="960" y="417" text-anchor="middle" fill="#6e5aab" font-size="20" font-weight="600" font-family="'Geist','Noto Sans CJK SC',sans-serif">⑤ 坐标还原</text>
+      <text x="960" y="444" text-anchor="middle" fill="#667085" font-size="15" font-family="'Geist','Noto Sans CJK SC',sans-serif">先减填充，再除比例</text>
+
+      <rect x="1120" y="382" width="208" height="80" rx="7" fill="#ffffff" stroke="#adb7c6" stroke-width="1.8"/>
+      <text x="1224" y="417" text-anchor="middle" fill="#30343f" font-size="20" font-weight="600" font-family="'Geist','Noto Sans CJK SC',sans-serif">框解码与筛选</text>
+      <text x="1224" y="444" text-anchor="middle" fill="#667085" font-size="15" font-family="'Geist','Noto Sans CJK SC',sans-serif">候选框 → NMS</text>
+
+      <!-- Bottom legend; labels repeat color meaning in text. -->
+      <path d="M64 514 H1328" stroke="#dfe4ea" stroke-width="1.5"/>
+      <rect x="64" y="542" width="24" height="18" rx="4" fill="#e7f6f4" stroke="#0f8e8a" stroke-width="1.6"/>
+      <text x="102" y="557" fill="#30343f" font-size="16" font-family="'Geist','Noto Sans CJK SC',sans-serif">LetterBox 正向缩放、填充和标注同步</text>
+      <rect x="612" y="542" width="24" height="18" rx="4" fill="#f3f0fa" stroke="#6e5aab" stroke-width="1.6"/>
+      <text x="650" y="557" fill="#30343f" font-size="16" font-family="'Geist','Noto Sans CJK SC',sans-serif">对应的逆向坐标处理</text>
+      <rect x="1008" y="542" width="24" height="18" rx="4" fill="#ffffff" stroke="#adb7c6" stroke-width="1.6"/>
+      <text x="1046" y="557" fill="#30343f" font-size="16" font-family="'Geist','Noto Sans CJK SC',sans-serif">其他检测步骤</text>
+    </svg>
+  </div>
+</main>
+</body>
+</html>

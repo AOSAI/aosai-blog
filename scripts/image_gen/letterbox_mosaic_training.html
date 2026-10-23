@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mosaic：四张训练图如何变成一张模型输入</title>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 32px; background: #fbfcfe; color: #30343f; font-family: 'Geist', 'Noto Sans CJK SC', 'PingFang SC', sans-serif; }
+    main { max-width: 1440px; margin: auto; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    svg { display: block; width: 100%; min-width: 1440px; }
+    @media print { .diagram-container { overflow-x: visible; } svg { min-width: 0; } }
+  </style>
+</head>
+<body>
+<main>
+  <div class="diagram-container">
+    <svg xmlns="http://www.w3.org/2000/svg" width="1440" height="600" viewBox="0 0 1440 600" role="img" aria-labelledby="letterbox-mosaic-training-title letterbox-mosaic-training-desc">
+      <title id="letterbox-mosaic-training-title">Mosaic：四张训练图如何变成一张模型输入</title>
+      <desc id="letterbox-mosaic-training-desc">四张带标注的训练图被放到 1280 乘 1280 的临时画布，随后通过随机几何变换和裁切生成一张 640 乘 640 的训练图，图像与标注框同步变化。</desc>
+      <defs>
+        <marker id="mosaic-flow-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0 0 L10 4 L0 8 Z" fill="#667085"/></marker>
+        <marker id="mosaic-flow-accent" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0 0 L10 4 L0 8 Z" fill="#0f8e8a"/></marker>
+      </defs>
+
+      <rect width="1440" height="600" fill="#fbfcfe"/>
+      <text x="64" y="56" fill="#30343f" font-size="30" font-weight="600" font-family="'Geist','Noto Sans CJK SC',sans-serif">Mosaic：四张训练图，合成一张模型输入</text>
+      <text x="64" y="88" fill="#667085" font-size="17" font-family="'Geist','Noto Sans CJK SC',sans-serif">以目标输入 640×640 为例；彩色区域 A—D 始终代表同一张来源图</text>
+
+      <!-- Three stage labels. -->
+      <text x="64" y="144" fill="#0c716d" font-size="16" font-weight="600" font-family="'Geist Mono',sans-serif">01</text>
+      <text x="100" y="144" fill="#30343f" font-size="19" font-weight="600" font-family="'Geist','Noto Sans CJK SC',sans-serif">选取四张训练图</text>
+      <text x="496" y="144" fill="#0c716d" font-size="16" font-weight="600" font-family="'Geist Mono',sans-serif">02</text>
+      <text x="532" y="144" fill="#30343f" font-size="19" font-weight="600" font-family="'Geist','Noto Sans CJK SC',sans-serif">拼成临时画布</text>
+      <text x="928" y="144" fill="#0c716d" font-size="16" font-weight="600" font-family="'Geist Mono',sans-serif">03</text>
+      <text x="964" y="144" fill="#30343f" font-size="19" font-weight="600" font-family="'Geist','Noto Sans CJK SC',sans-serif">得到一张训练图</text>
+
+      <!-- All connectors precede panels and images. -->
+      <path d="M408 312 H496" fill="none" stroke="#667085" stroke-width="2.5" marker-end="url(#mosaic-flow-arrow)"/>
+      <path d="M840 312 H928" fill="none" stroke="#0f8e8a" stroke-width="2.5" marker-end="url(#mosaic-flow-accent)"/>
+      <path d="M1264 312 H1300" fill="none" stroke="#667085" stroke-width="2.5" marker-end="url(#mosaic-flow-arrow)"/>
+
+      <!-- Stage panels. -->
+      <rect x="64" y="168" width="344" height="296" rx="8" fill="#ffffff" stroke="#d6dce5" stroke-width="1.5"/>
+      <rect x="496" y="168" width="344" height="296" rx="8" fill="#ffffff" stroke="#c7d7d5" stroke-width="1.5"/>
+      <rect x="928" y="168" width="336" height="296" rx="8" fill="#ffffff" stroke="#c7d7d5" stroke-width="1.5"/>
+
+      <!-- Source thumbnails; one solid dark rectangle per object is its annotation box. -->
+      <rect x="80" y="216" width="144" height="96" rx="4" fill="#d5ece9"/>
+      <path d="M80 280 H224" stroke="#b8d9d5" stroke-width="2"/>
+      <circle cx="160" cy="248" r="8" fill="#75bcb5"/>
+      <rect x="152" y="256" width="16" height="24" rx="4" fill="#75bcb5"/>
+      <rect x="144" y="236" width="32" height="52" fill="none" stroke="#34465e" stroke-width="2"/>
+      <text x="92" y="240" fill="#0c716d" font-size="19" font-weight="600" font-family="'Geist',sans-serif">A</text>
+
+      <rect x="248" y="216" width="144" height="96" rx="4" fill="#fae7dc"/>
+      <path d="M248 280 H392" stroke="#eac8b7" stroke-width="2"/>
+      <rect x="312" y="260" width="40" height="16" rx="5" fill="#d79879"/>
+      <circle cx="320" cy="278" r="4" fill="#9c6b50"/>
+      <circle cx="344" cy="278" r="4" fill="#9c6b50"/>
+      <rect x="304" y="248" width="56" height="40" fill="none" stroke="#34465e" stroke-width="2"/>
+      <text x="260" y="240" fill="#9c5437" font-size="19" font-weight="600" font-family="'Geist',sans-serif">B</text>
+
+      <rect x="80" y="328" width="144" height="96" rx="4" fill="#e1ebf7"/>
+      <path d="M80 392 H224" stroke="#c5d5ec" stroke-width="2"/>
+      <ellipse cx="160" cy="372" rx="18" ry="10" fill="#9cb5d6"/>
+      <circle cx="178" cy="366" r="6" fill="#9cb5d6"/>
+      <rect x="136" y="352" width="52" height="40" fill="none" stroke="#34465e" stroke-width="2"/>
+      <text x="92" y="352" fill="#5073ac" font-size="19" font-weight="600" font-family="'Geist',sans-serif">C</text>
+
+      <rect x="248" y="328" width="144" height="96" rx="4" fill="#ebe5f5"/>
+      <path d="M248 392 H392" stroke="#d5cae9" stroke-width="2"/>
+      <path d="M324 348 L344 380 H304 Z" fill="#a894cb"/>
+      <rect x="296" y="340" width="56" height="48" fill="none" stroke="#34465e" stroke-width="2"/>
+      <text x="260" y="352" fill="#735c9f" font-size="19" font-weight="600" font-family="'Geist',sans-serif">D</text>
+
+      <!-- Mosaic canvas: 2 × target image size. -->
+      <rect x="556" y="208" width="224" height="224" fill="#ffffff" stroke="#667085" stroke-width="1.5"/>
+      <rect x="556" y="208" width="112" height="112" fill="#d5ece9"/>
+      <rect x="668" y="208" width="112" height="112" fill="#fae7dc"/>
+      <rect x="556" y="320" width="112" height="112" fill="#e1ebf7"/>
+      <rect x="668" y="320" width="112" height="112" fill="#ebe5f5"/>
+      <text x="568" y="232" fill="#0c716d" font-size="18" font-weight="600" font-family="'Geist',sans-serif">A</text>
+      <text x="680" y="232" fill="#9c5437" font-size="18" font-weight="600" font-family="'Geist',sans-serif">B</text>
+      <text x="568" y="344" fill="#5073ac" font-size="18" font-weight="600" font-family="'Geist',sans-serif">C</text>
+      <text x="680" y="344" fill="#735c9f" font-size="18" font-weight="600" font-family="'Geist',sans-serif">D</text>
+      <circle cx="632" cy="280" r="7" fill="#75bcb5"/>
+      <rect x="626" y="288" width="12" height="16" rx="3" fill="#75bcb5"/>
+      <rect x="620" y="268" width="24" height="40" fill="none" stroke="#34465e" stroke-width="2"/>
+      <rect x="688" y="282" width="16" height="9" rx="3" fill="#d79879"/>
+      <rect x="684" y="272" width="24" height="28" fill="none" stroke="#34465e" stroke-width="2"/>
+      <ellipse cx="636" cy="348" rx="9" ry="6" fill="#9cb5d6"/>
+      <rect x="624" y="332" width="28" height="32" fill="none" stroke="#34465e" stroke-width="2"/>
+      <path d="M696 336 L704 352 H688 Z" fill="#a894cb"/>
+      <rect x="684" y="328" width="28" height="36" fill="none" stroke="#34465e" stroke-width="2"/>
+      <rect x="612" y="264" width="112" height="112" fill="none" stroke="#bf563e" stroke-width="3" stroke-dasharray="7 5"/>
+      <text x="668" y="452" text-anchor="middle" fill="#30343f" font-size="17" font-weight="600" font-family="'Geist',sans-serif">临时画布 1280×1280</text>
+
+      <!-- Final image: the shown crop is enlarged to 640 × 640. -->
+      <rect x="984" y="208" width="224" height="224" fill="#ffffff" stroke="#667085" stroke-width="1.5"/>
+      <rect x="984" y="208" width="112" height="112" fill="#d5ece9"/>
+      <rect x="1096" y="208" width="112" height="112" fill="#fae7dc"/>
+      <rect x="984" y="320" width="112" height="112" fill="#e1ebf7"/>
+      <rect x="1096" y="320" width="112" height="112" fill="#ebe5f5"/>
+      <text x="1072" y="308" fill="#0c716d" font-size="18" font-weight="600" font-family="'Geist',sans-serif">A</text>
+      <text x="1184" y="308" fill="#9c5437" font-size="18" font-weight="600" font-family="'Geist',sans-serif">B</text>
+      <text x="1072" y="420" fill="#5073ac" font-size="18" font-weight="600" font-family="'Geist',sans-serif">C</text>
+      <text x="1184" y="420" fill="#735c9f" font-size="18" font-weight="600" font-family="'Geist',sans-serif">D</text>
+      <circle cx="1024" cy="240" r="14" fill="#75bcb5"/>
+      <rect x="1012" y="256" width="24" height="32" rx="5" fill="#75bcb5"/>
+      <rect x="1000" y="216" width="48" height="80" fill="none" stroke="#34465e" stroke-width="2.5"/>
+      <rect x="1136" y="244" width="32" height="18" rx="5" fill="#d79879"/>
+      <rect x="1128" y="224" width="48" height="56" fill="none" stroke="#34465e" stroke-width="2.5"/>
+      <ellipse cx="1032" cy="376" rx="18" ry="12" fill="#9cb5d6"/>
+      <rect x="1008" y="344" width="56" height="64" fill="none" stroke="#34465e" stroke-width="2.5"/>
+      <path d="M1152 352 L1168 384 H1136 Z" fill="#a894cb"/>
+      <rect x="1128" y="336" width="56" height="72" fill="none" stroke="#34465e" stroke-width="2.5"/>
+      <text x="1096" y="452" text-anchor="middle" fill="#30343f" font-size="17" font-weight="600" font-family="'Geist',sans-serif">最终输入 640×640</text>
+
+      <!-- A separate endpoint makes clear that four images become one batch item. -->
+      <rect x="1300" y="268" width="100" height="88" rx="8" fill="#eef9f8" stroke="#0f8e8a" stroke-width="2"/>
+      <text x="1350" y="304" text-anchor="middle" fill="#0c716d" font-size="17" font-weight="600" font-family="'Geist',sans-serif">YOLOv8</text>
+      <text x="1350" y="332" text-anchor="middle" fill="#0c716d" font-size="14" font-family="'Geist','Noto Sans CJK SC',sans-serif">1 张图</text>
+
+      <!-- Arrow labels are placed on paper masks above the connector strokes. -->
+      <rect x="420" y="268" width="64" height="28" rx="3" fill="#fbfcfe"/>
+      <text x="452" y="288" text-anchor="middle" fill="#667085" font-size="16" font-family="'Geist','Noto Sans CJK SC',sans-serif">拼接</text>
+      <rect x="844" y="264" width="80" height="36" rx="3" fill="#fbfcfe"/>
+      <text x="884" y="279" text-anchor="middle" fill="#0c716d" font-size="15" font-family="'Geist','Noto Sans CJK SC',sans-serif">变换</text>
+      <text x="884" y="296" text-anchor="middle" fill="#0c716d" font-size="15" font-family="'Geist','Noto Sans CJK SC',sans-serif">＋裁切</text>
+
+      <!-- A restrained bottom strip explains the two visual marks. -->
+      <path d="M64 500 H1400" stroke="#dfe4ea" stroke-width="1.5"/>
+      <rect x="64" y="528" width="28" height="24" fill="none" stroke="#34465e" stroke-width="2"/>
+      <text x="108" y="546" fill="#30343f" font-size="16" font-family="'Geist','Noto Sans CJK SC',sans-serif">目标框随图像同步变换</text>
+      <rect x="448" y="528" width="28" height="24" fill="none" stroke="#bf563e" stroke-width="2" stroke-dasharray="6 4"/>
+      <text x="492" y="546" fill="#30343f" font-size="16" font-family="'Geist','Noto Sans CJK SC',sans-serif">虚线只示意一次可能的输出范围</text>
+      <text x="1012" y="546" fill="#667085" font-size="16" font-family="'Geist','Noto Sans CJK SC',sans-serif">实际拼接位置、变换参数每次可不同</text>
+    </svg>
+  </div>
+</main>
+</body>
+</html>

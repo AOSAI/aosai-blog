@@ -13,7 +13,7 @@ tags:
 
 在语义分割中，模型最后要预测一张 mask。预测区域和真实区域重叠得越多，说明分割结果越好。
 
-[Dice 系数](../EvaluationMetrics/02_SegmentationMetrics.md)就是用来衡量这种重叠程度的：完全重合时等于 1，完全不重合时等于 0。
+[Dice 系数](../EvaluationMetrics/10_Dice.md)就是用来衡量这种重叠程度的：完全重合时等于 1，完全不重合时等于 0。
 
 但训练模型时，我们需要最小化损失。于是只要把 Dice 系数反过来，就得到了 **Dice Loss**：
 

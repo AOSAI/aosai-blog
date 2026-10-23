@@ -79,7 +79,12 @@ const docs = [
     linkPrefix: '/DeepLearning/EvaluationMetrics',
     title: '评价指标',
     autoFrontmatter: false,
-    sidebar: 'auto',
+    sidebar: [
+      { text: '总览', items: ['01_CommonMetrics'] },
+      { text: '通用指标', items: ['02_ConfusionMatrix', '03_Accuracy', '04_Precision', '05_Recall', '06_F1'] },
+      { text: '区域重叠', items: ['07_IoU', '08_mIoU', '09_CIoU', '10_Dice'] },
+      { text: '目标检测', items: ['11_AP', '12_mAP'] },
+    ],
   }),
   defineCollection({
     type: 'doc',

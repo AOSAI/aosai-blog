@@ -113,7 +113,7 @@ $$
 {\text{预测 Mask 与真实 Mask 的并集像素数}}
 $$
 
-在此基础上，再计算 **Mask AP**。它和[目标检测中的 AP](../EvaluationMetrics/03_ObjectDetectionMetrics.md#_2-目标检测中的-ap-与-map)使用同一套置信度排序、匹配与面积计算逻辑，区别是：目标检测使用边界框 IoU 判断是否匹配，实例分割使用 Mask IoU。
+在此基础上，再计算 **Mask AP**。它和[目标检测中的 AP](../EvaluationMetrics/11_AP.md)使用同一套置信度排序、匹配与面积计算逻辑，区别是：目标检测使用边界框 IoU 判断是否匹配，实例分割使用 Mask IoU。
 
 ## 2. 实例分割必须解决哪些设计问题？
 

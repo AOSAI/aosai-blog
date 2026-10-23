@@ -11,7 +11,7 @@ tags:
 
 ## 1. 什么是 Lovász Loss？
 
-在图像分割中，[IoU](../EvaluationMetrics/02_SegmentationMetrics.md)用预测区域和真实区域的交集除以并集，能够直接衡量两个区域重叠得好不好。
+在图像分割中，[IoU](../EvaluationMetrics/07_IoU.md)用预测区域和真实区域的交集除以并集，能够直接衡量两个区域重叠得好不好。
 
 但是，标准 IoU 需要先通过阈值或 `argmax` 得到离散的 mask：
 

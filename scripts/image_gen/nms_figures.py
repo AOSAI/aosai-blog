@@ -15,6 +15,7 @@ from matplotlib.patches import Rectangle
 
 OUT = Path("docs/.vuepress/public/ComputerVision/YOLOSeries")
 FONT = Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc")
+BOLD_FONT = Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc")
 INK = "#30343F"
 MUTED = "#667085"
 TEAL = "#20AFA8"
@@ -46,8 +47,9 @@ def draw_box(ax, xyxy, color, label, dashed=False):
             linestyle="--" if dashed else "-", zorder=3,
         )
     )
-    label_x = x1 + 1.5 if label != "B" else x2 - 1.5
-    ax.text(label_x, y1 + 2.0, label, ha="center", va="center",
+    label_x = x2 - 1.5 if label == "B" else x1 + 1.5
+    label_y = y2 - 1.5 if label == "D" else y1 + 2.0
+    ax.text(label_x, label_y, label, ha="center", va="center",
             fontsize=17, weight="bold", color=color, zorder=5)
 
 
@@ -56,23 +58,33 @@ def pipeline():
         "A": ((0, 0, 10, 10), TEAL),
         "B": ((3, 0, 13, 10), CORAL),
         "C": ((20, 0, 30, 10), PURPLE),
-        "D": ((20, 14, 30, 24), MUTED),
+        "D": ((1, 3, 11, 13), MUTED),
     }
     stages = [
-        ("① 全部候选框", ("A", "B", "C", "D"), "A 0.95 · B 0.90 · C 0.80 · D 0.10"),
-        ("② 分数过滤后", ("A", "B", "C"), "D：0.10 < 0.25，丢弃"),
-        ("③ NMS 后", ("A", "C"), "B：IoU 0.538 > 0.5，抑制"),
+        ("① 全部候选框", ("D", "A", "B", "C"),
+         "A 人 0.95 · B 人 0.90 · C 人 0.80\nD 玩具 0.10（最高类别分数）"),
+        ("② 类别分数过滤后", ("A", "B", "C"),
+         "①→② 类别分数阈值 0.25\nD：类别分数 0.10 < 0.25，丢弃"),
+        ("③ NMS 后", ("A", "C"),
+         "②→③ NMS 使用 IoU 阈值 0.5\nB：与 A 同类，IoU 0.538 > 0.5\nC：与 A 不重叠，保留"),
     ]
-    fig = plt.figure(figsize=(15, 5.5), facecolor="white")
-    fig.text(0.5, 0.945, "两个筛选步骤，解决两种不同问题", ha="center",
-             fontsize=22, weight="bold", color=INK)
-    fig.text(0.5, 0.875, "同一坐标系、同一组框：先排除低分，再消除重叠的高分重复框",
+    fig = plt.figure(figsize=(15, 5.8), facecolor="white")
+    fig.text(0.5, 0.945, "先过滤低分，再用 NMS 抑制重复框", ha="center",
+             fontproperties=font_manager.FontProperties(fname=str(BOLD_FONT), size=22),
+             color=INK)
+    fig.text(0.5, 0.875, "①→② 类别分数阈值 0.25；②→③ IoU 阈值 0.5",
              ha="center", fontsize=13.5, color=MUTED)
 
+    for x, label, color in ((0.34, "过滤", MUTED), (0.665, "NMS", PURPLE)):
+        fig.text(x, 0.53, label, ha="center", va="center",
+                 fontsize=11, color=color)
+        fig.text(x, 0.48, "→", ha="center", va="center",
+                 fontsize=22, weight="bold", color=color)
+
     for index, (heading, visible, detail) in enumerate(stages):
-        ax = fig.add_axes((0.035 + index * 0.325, 0.17, 0.285, 0.61))
+        ax = fig.add_axes((0.035 + index * 0.325, 0.20, 0.285, 0.57))
         ax.set_xlim(-2, 32)
-        ax.set_ylim(26, -2)
+        ax.set_ylim(20, -2)
         ax.set_aspect("equal")
         ax.set_facecolor("#FAFBFC")
         ax.set_xticks([])
@@ -84,8 +96,12 @@ def pipeline():
         for label in visible:
             xyxy, color = boxes[label]
             draw_box(ax, xyxy, color, label, dashed=(label == "D"))
-        fig.text(0.1775 + index * 0.325, 0.085, detail, ha="center",
-                 fontsize=12.5, color=INK if index == 0 else MUTED)
+        ax.text(6.5, 17, "同一人附近", ha="center", va="center",
+                fontsize=12, color=MUTED)
+        ax.text(25, 17, "另一人附近", ha="center", va="center",
+                fontsize=12, color=MUTED)
+        fig.text(0.1775 + index * 0.325, 0.105, detail, ha="center",
+                 va="center", fontsize=12, color=INK if index == 0 else MUTED)
     save(fig, "09_nms_pipeline.png")
 
 

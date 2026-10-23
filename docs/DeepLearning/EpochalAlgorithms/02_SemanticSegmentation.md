@@ -156,8 +156,8 @@ logits: [类别数, 高, 宽]
 
 语义分割不能只看 accuracy。如果一张图里 90% 都是背景，模型把所有像素都预测成背景，也能得到很高的 accuracy，但这显然不是好分割。所以语义分割更常看区域重叠：
 
-- **[mIoU](../EvaluationMetrics/02_SegmentationMetrics.md)**：先看每个类别的预测区域和真实区域重叠得好不好，再对所有类别求平均。
-- **[Dice](../EvaluationMetrics/02_SegmentationMetrics.md)**：看预测 mask 和真实 mask 的重叠比例，医学图像分割里很常见。
+- **[mIoU](../EvaluationMetrics/08_mIoU.md)**：先看每个类别的预测区域和真实区域重叠得好不好，再对所有类别求平均。
+- **[Dice](../EvaluationMetrics/10_Dice.md)**：看预测 mask 和真实 mask 的重叠比例，医学图像分割里很常见。
 
 mIoU 的直觉很简单：预测出来的“车”区域，和真实的“车”区域重叠越多，分数越高；多预测了很多不该属于车的地方，分数就会下降。
 

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #fbfaf7; color: #25334a; font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  main { width: min(100%, 1020px); margin: 0 auto; padding: 20px; }
+  .diagram-container { width: 100%; overflow-x: auto; }
+  svg { display: block; width: 100%; min-width: 960px; height: auto; }
+  .title { font: 600 27px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #25334a; }
+  .panel-title { font: 600 18px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #25334a; }
+  .label { font: 500 15px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #53627a; }
+  .score { font: 600 20px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #26334b; }
+  .note { font: 500 15px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #53627a; }
+  .base { fill: #38aaa0; fill-opacity: .10; stroke: #228f86; stroke-width: 3; }
+  .small { fill: #ed736b; fill-opacity: .24; stroke: #df6158; stroke-width: 3; }
+  .base-center { fill: #228f86; }
+  .small-center { fill: #df6158; }
+  .guide { fill: none; stroke: #9ba6b6; stroke-width: 1.6; stroke-dasharray: 5 5; }
+  @media print { .diagram-container { overflow-x: visible; } svg { min-width: 0; } }
+</style>
+</head>
+<body><main><div class="diagram-container">
+<svg viewBox="0 0 960 440" role="img" aria-labelledby="ciou-containment-title ciou-containment-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="ciou-containment-title">IoU 同为 0.36，CIoU 区分中心偏移</title>
+  <desc id="ciou-containment-desc">两个同样面积的候选框位于参考框内部。居中时 CIoU 为 0.36，靠角时中心距离罚项为 0.04，CIoU 为 0.32。</desc>
+  <rect x="0" y="0" width="960" height="440" fill="#fbfaf7" />
+  <text x="480" y="44" text-anchor="middle" class="title">IoU 同为 0.36，CIoU 区分中心偏移</text>
+  <line x1="480" y1="74" x2="480" y2="370" stroke="#dbe1e6" stroke-width="1.5" />
+
+  <text x="255" y="91" text-anchor="middle" class="panel-title">A · 两框中心重合</text>
+  <rect x="150" y="118" width="210" height="210" class="base" />
+  <rect x="192" y="160" width="126" height="126" class="small" />
+
+  <path d="M 255 223 H 255 V 223" class="guide" />
+  <circle cx="255" cy="223" r="11" fill="none" stroke="#228f86" stroke-width="3" />
+  <circle cx="255" cy="223" r="5.5" class="small-center" />
+  <text x="255" y="345" text-anchor="middle" class="label">青点：参考中心　珊瑚点：候选中心</text>
+  <text x="255" y="385" text-anchor="middle" class="score">CIoU = 0.36</text>
+  <text x="705" y="91" text-anchor="middle" class="panel-title">B · 候选中心偏移 20×20</text>
+  <rect x="600" y="118" width="210" height="210" class="base" />
+  <rect x="600" y="118" width="126" height="126" class="small" />
+
+  <path d="M 663 181 H 705 V 223" class="guide" />
+  <circle cx="705" cy="223" r="5.5" class="base-center" />
+  <circle cx="663" cy="181" r="5.5" class="small-center" />
+  <text x="705" y="345" text-anchor="middle" class="label">青点：参考中心　珊瑚点：候选中心</text>
+  <text x="705" y="385" text-anchor="middle" class="score">CIoU = 0.32</text><text x="480" y="425" text-anchor="middle" class="note">两例宽高比相同，宽高比项为 0；B 的中心距离项为 0.04</text>
+</svg></div></main></body></html>
