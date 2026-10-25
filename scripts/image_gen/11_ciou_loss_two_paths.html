@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { margin: 0; background: #fbfaf7; }
+    svg { display: block; width: min(100%, 1160px); height: auto; margin: auto; }
+  </style>
+</head>
+<body>
+<svg viewBox="0 0 1160 520" role="img" aria-labelledby="two-paths-title two-paths-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="two-paths-title">同一轮预测分成正样本分配和 CIoU 损失两条路径</title>
+  <desc id="two-paths-desc">检测头预测分两路。上路用 detach 副本选择正样本，得到掩码、GT 框和目标分数；下路用原始预测框和分配结果计算 CIoU Loss，梯度只沿下路返回检测头。</desc>
+  <defs>
+    <marker id="arrow-muted" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M 0 0 L 9 4 L 0 8 Z" fill="#8391a3"/>
+    </marker>
+    <marker id="arrow-teal" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M 0 0 L 9 4 L 0 8 Z" fill="#228f86"/>
+    </marker>
+    <marker id="arrow-coral" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M 0 0 L 9 4 L 0 8 Z" fill="#cf6159"/>
+    </marker>
+  </defs>
+  <rect width="1160" height="520" fill="#fbfaf7"/>
+  <g font-family="Noto Sans SC, PingFang SC, Microsoft YaHei, sans-serif">
+    <text x="580" y="49" text-anchor="middle" font-size="27" font-weight="600" fill="#25334a">同一轮预测，分配与框损失走两条路径</text>
+
+    <rect x="282" y="88" width="810" height="149" fill="#f1f3f5"/>
+    <rect x="282" y="279" width="810" height="150" fill="#edf7f5"/>
+    <text x="310" y="116" font-size="18" font-weight="600" fill="#66778b">正样本分配 · 不追踪梯度</text>
+    <text x="310" y="307" font-size="18" font-weight="600" fill="#228f86">CIoU 框损失 · 保留梯度</text>
+
+    <path d="M 226 255 H 268" fill="none" stroke="#8391a3" stroke-width="2.5"/>
+    <path d="M 268 255 V 171 H 310" fill="none" stroke="#8391a3" stroke-width="2.5" marker-end="url(#arrow-muted)"/>
+    <path d="M 268 255 V 362 H 310" fill="none" stroke="#228f86" stroke-width="2.5" marker-end="url(#arrow-teal)"/>
+    <path d="M 490 171 H 550" fill="none" stroke="#8391a3" stroke-width="2.5" marker-end="url(#arrow-muted)"/>
+    <path d="M 730 171 H 790" fill="none" stroke="#8391a3" stroke-width="2.5" marker-end="url(#arrow-muted)"/>
+    <path d="M 925 221 V 317" fill="none" stroke="#8391a3" stroke-width="2.2" stroke-dasharray="6 5" marker-end="url(#arrow-muted)"/>
+    <path d="M 490 362 H 790" fill="none" stroke="#228f86" stroke-width="2.8" marker-end="url(#arrow-teal)"/>
+    <path d="M 925 407 V 457 H 134 V 303" fill="none" stroke="#cf6159" stroke-width="2.7" marker-end="url(#arrow-coral)"/>
+    <circle cx="268" cy="255" r="5" fill="#25334a"/>
+
+    <rect x="42" y="207" width="184" height="96" rx="6" fill="#ffffff" stroke="#25334a" stroke-width="2.2"/>
+    <text x="134" y="239" text-anchor="middle" font-size="19" font-weight="600" fill="#25334a">检测头预测</text>
+    <text x="134" y="266" text-anchor="middle" font-size="16" fill="#53627a">pred_scores</text>
+    <text x="134" y="287" text-anchor="middle" font-size="16" fill="#53627a">pred_bboxes</text>
+
+    <rect x="310" y="130" width="180" height="82" rx="6" fill="#ffffff" stroke="#aab5c1" stroke-width="2"/>
+    <text x="400" y="163" text-anchor="middle" font-size="19" font-weight="600" fill="#25334a">detach 副本</text>
+    <text x="400" y="190" text-anchor="middle" font-size="15" fill="#66778b">数值相同，梯度切断</text>
+
+    <rect x="550" y="130" width="180" height="82" rx="6" fill="#ffffff" stroke="#aab5c1" stroke-width="2"/>
+    <text x="640" y="163" text-anchor="middle" font-size="19" font-weight="600" fill="#25334a">正样本分配</text>
+    <text x="640" y="190" text-anchor="middle" font-size="15" fill="#66778b">选位置、配 GT</text>
+
+    <rect x="790" y="121" width="270" height="100" rx="6" fill="#ffffff" stroke="#aab5c1" stroke-width="2"/>
+    <text x="925" y="152" text-anchor="middle" font-size="19" font-weight="600" fill="#25334a">分配结果</text>
+    <text x="925" y="180" text-anchor="middle" font-size="16" fill="#53627a">fg_mask / target_bboxes</text>
+    <text x="925" y="203" text-anchor="middle" font-size="16" fill="#53627a">target_scores</text>
+    <text x="874" y="267" text-anchor="end" font-size="15" fill="#66778b">训练目标</text>
+
+    <rect x="310" y="321" width="180" height="82" rx="6" fill="#ffffff" stroke="#228f86" stroke-width="2"/>
+    <text x="400" y="354" text-anchor="middle" font-size="19" font-weight="600" fill="#25334a">原始预测框</text>
+    <text x="400" y="381" text-anchor="middle" font-size="16" fill="#228f86">pred_bboxes</text>
+
+    <rect x="790" y="317" width="270" height="90" rx="6" fill="#fff6f3" stroke="#cf6159" stroke-width="2.5"/>
+    <text x="925" y="353" text-anchor="middle" font-size="22" font-weight="600" fill="#25334a">CIoU Loss</text>
+    <text x="925" y="382" text-anchor="middle" font-size="16" fill="#53627a">正样本预测框 vs GT 框</text>
+
+    <text x="580" y="487" text-anchor="middle" font-size="17" font-weight="600" fill="#ba554e">梯度经框解码返回，更新检测头参数</text>
+  </g>
+</svg>
+</body>
+</html>

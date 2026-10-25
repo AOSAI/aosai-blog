@@ -97,7 +97,7 @@ const docs = [
       { text: '网络结构', items: ['02_C2f', '03_SPPF', '04_FPN', '05_PANet', '06_DetectHead'] },
       { text: '数据处理', items: ['07_LetterBox', '10_TaskAlignedAssigner'] },
       { text: '预测解码与筛选', items: ['08_BoxDecode', '09_NMS'] },
-      { text: '损失函数', items: ['11_CIoU_BoxLoss', '12_YOLOv8_ClassLoss', '13_DFL_Loss'] },
+      { text: '损失函数', items: ['11_CIoU_BoxLoss', '12_BCE_ClassLoss', '13_DFL_Loss'] },
       { text: '实践', items: ['14_FewImageOverfit'] },
     ],
   }),

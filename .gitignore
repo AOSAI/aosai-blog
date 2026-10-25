@@ -8,3 +8,11 @@ docs/.vuepress/dist/
 scripts/*
 !scripts/image_gen/
 .chatgpt/
+
+# 本地临时目录（参考论文、草稿、交接记录，不入库）
+tmp/
+temp/
+
+# Python 缓存
+__pycache__/
+*.pyc

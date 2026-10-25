@@ -124,32 +124,46 @@ $$
 
 ### **4.2 用 PyTorch 写出这四步**
 
-下面的函数接收**已经解码**的预测框和 **Sigmoid 后**的类别分数，集中展示分配逻辑；没有调用 Ultralytics 的分配 API。`CIoU` 的计算也写在代码里，以便核对表中的数值。示例只处理一张图，不含批次和无标注图的工程分支；实际训练使用 `topk=10`，这里传 `3` 以展示两个目标争夺 `B`。[v8.3.0 分配器源码](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/utils/tal.py)
+下面的分配函数接收**已经解码**的预测框和 **Sigmoid 后**的类别分数，没有调用 Ultralytics 的分配 API。CIoU 也单独写成函数，以便核对表中的数值。三个标签页分别对应同一目录下的 `main.py`、`assign.py`、`ciou.py`；运行 `python main.py` 即可。示例只处理一张图，不含批次和无标注图的工程分支；实际训练使用 `topk=10`，这里传 `3` 以展示两个目标争夺 `B`。[v8.3.0 分配器源码](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/utils/tal.py)
+
+::: tabs
+@tab 主体（main.py）
 
 ```python
-import math
-
 import torch
 
+from assign import assign_one_image
 
-def nonnegative_ciou(gt, pred, eps=1e-7):
-    """两个 xyxy 框的 CIoU；与分配器一样，把负值截成 0。"""
-    left_top = torch.maximum(gt[:2], pred[:2])
-    right_bottom = torch.minimum(gt[2:], pred[2:])
-    intersection = (right_bottom - left_top).clamp(min=0).prod()
-    gt_wh, pred_wh = gt[2:] - gt[:2], pred[2:] - pred[:2]
-    union = gt_wh.prod() + pred_wh.prod() - intersection
-    iou = intersection / (union + eps)
 
-    enclosing = torch.maximum(gt[2:], pred[2:]) - torch.minimum(gt[:2], pred[:2])
-    diagonal2 = enclosing.square().sum() + eps
-    center_distance2 = ((gt[:2] + gt[2:] - pred[:2] - pred[2:]) / 2).square().sum()
-    v = 4 / math.pi**2 * (
-        torch.atan(gt_wh[0] / (gt_wh[1] + eps))
-        - torch.atan(pred_wh[0] / (pred_wh[1] + eps))
-    ).square()
-    alpha = v / (v - iou + 1 + eps)
-    return (iou - center_distance2 / diagonal2 - v * alpha).clamp(min=0)
+points = torch.tensor([[1., 1.], [3., 2.], [5., 3.], [7., 3.], [2., 3.]])
+gt_boxes = torch.tensor([[0., 0., 4., 4.], [2., 1., 6., 5.]])
+gt_classes = torch.tensor([0, 1])
+pred_boxes = torch.tensor([
+    [0., 0., 3., 3.],  # A
+    [2., 1., 6., 5.],  # B
+    [2., 1., 6., 5.],  # C
+    [0., 0., 4., 4.],  # D：框虽准，参考点却在标注框外
+    [0., 0., 4., 4.],  # E
+])
+class_probs = torch.tensor([
+    [0.80, 0.10], [0.95, 0.65], [0.10, 0.80],
+    [0.99, 0.99], [0.70, 0.10],
+])
+fg_mask, target_gt, target_boxes, target_scores = assign_one_image(
+    points, pred_boxes, class_probs, gt_boxes, gt_classes, topk=3,
+)
+assert target_gt.tolist() == [0, 1, 1, -1, 0]
+print(fg_mask.tolist())            # [True, True, True, False, True]
+print(target_gt.tolist())           # [0, 1, 1, -1, 0]
+print(target_scores.round(decimals=4))
+```
+
+@tab 分配函数（assign.py）
+
+```python
+import torch
+
+from ciou import nonnegative_ciou
 
 
 @torch.no_grad()
@@ -194,29 +208,36 @@ def assign_one_image(points, pred_boxes, class_probs, gt_boxes, gt_classes, topk
                 metric[g, ids] / (max_metric + 1e-9) * max_quality
             )
     return fg_mask, target_gt, target_boxes, target_scores
-
-
-points = torch.tensor([[1., 1.], [3., 2.], [5., 3.], [7., 3.], [2., 3.]])
-gt_boxes = torch.tensor([[0., 0., 4., 4.], [2., 1., 6., 5.]])
-gt_classes = torch.tensor([0, 1])
-pred_boxes = torch.tensor([
-    [0., 0., 3., 3.],  # A
-    [2., 1., 6., 5.],  # B
-    [2., 1., 6., 5.],  # C
-    [0., 0., 4., 4.],  # D：框虽准，参考点却在标注框外
-    [0., 0., 4., 4.],  # E
-])
-class_probs = torch.tensor([
-    [0.80, 0.10], [0.95, 0.65], [0.10, 0.80],
-    [0.99, 0.99], [0.70, 0.10],
-])
-fg_mask, target_gt, target_boxes, target_scores = assign_one_image(
-    points, pred_boxes, class_probs, gt_boxes, gt_classes, topk=3,
-)
-assert target_gt.tolist() == [0, 1, 1, -1, 0]
-print(fg_mask.tolist())            # [True, True, True, False, True]
-print(target_gt.tolist())           # [0, 1, 1, -1, 0]
-print(target_scores.round(decimals=4))
 ```
+
+@tab CIoU 函数（ciou.py）
+
+```python
+import math
+
+import torch
+
+
+def nonnegative_ciou(gt, pred, eps=1e-7):
+    """两个 xyxy 框的 CIoU；与分配器一样，把负值截成 0。"""
+    left_top = torch.maximum(gt[:2], pred[:2])
+    right_bottom = torch.minimum(gt[2:], pred[2:])
+    intersection = (right_bottom - left_top).clamp(min=0).prod()
+    gt_wh, pred_wh = gt[2:] - gt[:2], pred[2:] - pred[:2]
+    union = gt_wh.prod() + pred_wh.prod() - intersection
+    iou = intersection / (union + eps)
+
+    enclosing = torch.maximum(gt[2:], pred[2:]) - torch.minimum(gt[:2], pred[:2])
+    diagonal2 = enclosing.square().sum() + eps
+    center_distance2 = ((gt[:2] + gt[2:] - pred[:2] - pred[2:]) / 2).square().sum()
+    v = 4 / math.pi**2 * (
+        torch.atan(gt_wh[0] / (gt_wh[1] + eps))
+        - torch.atan(pred_wh[0] / (pred_wh[1] + eps))
+    ).square()
+    alpha = v / (v - iou + 1 + eps)
+    return (iou - center_distance2 / diagonal2 - v * alpha).clamp(min=0)
+```
+
+:::
 
 `target_gt=-1` 在这段教学代码中表示背景；Ultralytics 源码另用 `fg_mask` 判断正样本。`target_boxes` 保存正样本对应的标注框，`target_scores` 保存各位置、各类别的训练目标分数。代码直接从参考点和预测框算到最终标签；在真正的训练中，这些张量还带有批次维度，并接入类别、框和距离分布损失。
