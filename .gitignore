@@ -5,8 +5,7 @@ docs/.vuepress/dist/
 
 .DS_Store
 *.log
-scripts/*
-!scripts/image_gen/
+scripts/
 .chatgpt/
 
 # 本地临时目录（参考论文、草稿、交接记录，不入库）
