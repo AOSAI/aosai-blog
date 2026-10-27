@@ -11,7 +11,7 @@ tags:
 
 ## **1. CIoU 分数怎样变成损失**
 
-检测头给出候选框后，<span style="color: #c23b3b; font-weight: 700">训练要让负责目标的预测框逐渐贴近标注框。</span>==完全交并比（Complete Intersection over Union，CIoU）==比较一对框的**重叠、中心距离和宽高比**；分数越高，两框越接近。三个量怎样计算，见 [CIoU 指标篇](/DeepLearning/EvaluationMetrics/09_CIoU.md)。
+检测头给出候选框后，<span class="emphasis-red">训练要让负责目标的预测框逐渐贴近标注框。</span>==完全交并比（Complete Intersection over Union，CIoU）==比较一对框的**重叠、中心距离和宽高比**；分数越高，两框越接近。三个量怎样计算，见 [CIoU 指标篇](/DeepLearning/EvaluationMetrics/09_CIoU.md)。
 
 ### **1.1 对一对框，先用 `1` 减去 CIoU**
 
@@ -21,7 +21,7 @@ $$
 L_{\mathrm{CIoU}}(\hat B,B)=1-\operatorname{CIoU}(\hat B,B).
 $$
 
-完全重合时，CIoU 为 `1`，损失为 `0`。CIoU **不是概率**，框相差很远时还可能小于 `0`，这时损失可以大于 `1`；<span style="color: #b45f06; font-weight: 700">计算框损失时不能先把负的 CIoU 截成 0。</span>[CIoU 原论文](https://arxiv.org/abs/1911.08287)、[YOLOv8 v8.3.0 框损失源码](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/utils/loss.py#L82-L102)
+完全重合时，CIoU 为 `1`，损失为 `0`。CIoU **不是概率**，框相差很远时还可能小于 `0`，这时损失可以大于 `1`；<span class="emphasis-yellow">计算框损失时不能先把负的 CIoU 截成 0。</span>[CIoU 原论文](https://arxiv.org/abs/1911.08287)、[YOLOv8 v8.3.0 框损失源码](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/utils/loss.py#L82-L102)
 
 ### **1.2 预测框怎样改变**
 
@@ -43,7 +43,7 @@ YOLOv8 的每个预测位置都会输出一个候选框和各类别的原始分�
 
 - `fg_mask`：每个预测位置对应一个 `True` 或 `False`；`True` 表示这个位置是正样本。它是**位置标记**，不是预测框，也不是图像掩码。
 - `target_bboxes`：正样本负责的**标注框（GT 框）**，用来和该位置的预测框比较。
-- `target_scores`：按**标注类别**并结合当前预测的匹配质量生成的**类别训练目标分数**。模型当前输出的类别原始分数叫 `pred_scores`；`target_scores` 不是预测分数。[v8.3.0 分配器源码](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/utils/tal.py)
+- `target_scores`：每个位置都有一组**按类别排列的训练目标分数**。正样本只在所负责的类别上可能有非零值，负样本全为 `0`；数值怎样产生，见[正样本分配第 3.2 节](./10_TaskAlignedAssigner.md#32-分完以后怎样生成-target_scores)。检测头输出的类别原始分数叫 `pred_scores`，不是这份训练目标。[v8.3.0 分配器源码](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/utils/tal.py)
 
 两者都叫 `target`，因为它们是该位置训练时要对照的**框目标**和**类别目标**。
 
@@ -55,7 +55,7 @@ YOLOv8 的每个预测位置都会输出一个候选框和各类别的原始分�
 
 ### **2.2 每个正样本的损失还要乘上权重**
 
-正样本在标注类别上的 `target_scores` 不一定是 `1`，它反映分配时的匹配质量。YOLOv8 对一个正样本把各类别的目标分数相加，作为它的框损失权重 $w_i$：[正样本分配中的目标分数](./10_TaskAlignedAssigner.md#32-分完以后每个位置拿到什么)、[v8.3.0 `BboxLoss`](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/utils/loss.py#L82-L102)
+分配器生成的 `target_scores` 在这里**不是要与预测框比较的几何目标，而是框损失的权重**。YOLOv8 把一个正样本各类别的目标分数相加，得到 $w_i$；由于只有所负责的类别可能非零，这个和就是该类别的目标分数。它由分类分数和定位质量共同决定，不能直接当作这个框的 CIoU。[正样本分配第 3.2 节](./10_TaskAlignedAssigner.md#32-分完以后怎样生成-target_scores)、[v8.3.0 `BboxLoss`](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/utils/loss.py#L82-L102)
 
 $$
 w_i=\sum_c \text{target\_scores}_{i,c},\qquad
@@ -78,7 +78,7 @@ $P$ 是正样本位置集合。分母是**所有位置、所有类别的目标�
 
 ## **3. PyTorch 中怎么计算**
 
-[Torchvision 的 `complete_box_iou_loss`](https://docs.pytorch.org/vision/stable/generated/torchvision.ops.complete_box_iou_loss.html)可以直接对**已配对的** `xyxy` 框计算逐框损失。第一个标签页计算图 1 中四个示意状态的损失；第二个标签页示范 YOLOv8 对两个正样本的加权汇总。几何计算调用的是 Torchvision，不保证与 Ultralytics 的 `bbox_iou(CIoU=True)` 在所有边界情形下逐位相同；权重与归一化步骤则对照 v8.3.0 源码。
+[Torchvision 的 `complete_box_iou_loss`](https://docs.pytorch.org/vision/stable/generated/torchvision.ops.complete_box_iou_loss.html)可以直接对**已配对的** `xyxy` 框计算逐框损失。第一个标签页计算图 1 中四个示意状态的损失；第二个标签页示范 YOLOv8 对两个正样本的加权汇总。第二个例子只设一个类别，所以 `target_scores` 的每行只有一个数。几何计算调用的是 Torchvision，不保证与 Ultralytics 的 `bbox_iou(CIoU=True)` 在所有边界情形下逐位相同；权重与归一化步骤则对照 v8.3.0 源码。
 
 ::: tabs
 @tab 一条可能的改进路径

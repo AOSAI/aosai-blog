@@ -24,6 +24,10 @@
   --vp-c-text-2: rgba(60, 60, 67, 0.78);
   --vp-c-text-3: rgba(60, 60, 67, 0.56);
   */
+
+  /** 正文强调色 */
+  --blog-emphasis-red: #c23b3b;
+  --blog-emphasis-yellow: #b45f06;
 }
 
 /** 深色模式 */
@@ -47,6 +51,22 @@
   --vp-c-text-2: rgba(235, 235, 245, 0.6);
   --vp-c-text-3: rgba(235, 235, 245, 0.38);
   */
+
+  --blog-emphasis-red: #ff8a80;
+  --blog-emphasis-yellow: #f2c16d;
+}
+
+.vp-doc .emphasis-red,
+.vp-doc .emphasis-yellow {
+  font-weight: 700;
+}
+
+.vp-doc .emphasis-red {
+  color: var(--blog-emphasis-red);
+}
+
+.vp-doc .emphasis-yellow {
+  color: var(--blog-emphasis-yellow);
 }
 
 /* 全站 Markdown 高亮统一使用黄色。 */

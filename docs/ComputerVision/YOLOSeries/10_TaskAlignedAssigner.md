@@ -13,7 +13,7 @@ tags:
 
 ### **1.1 参考点何时成为正样本**
 
-以 `640×640` 输入为例，[YOLOv8 检测头](./06_DetectHead.md)在 `P3、P4、P5` 三张特征图上共有 `80×80+40×40+20×20=8400` 个预测位置。每个位置对应一个==参考点（Anchor Point）==，并输出一个[候选框](./08_BoxDecode.md)和各类别分数。训练数据则给出每个目标的**标注框和类别**。==正样本分配（Positive Sample Assignment）==要决定：哪些位置负责学习哪个目标？
+以 `640×640` 输入为例，[YOLOv8 检测头](./06_DetectHead.md)在 `P3、P4、P5` 三张特征图上共有 `80×80+40×40+20×20=8400` 个预测位置。每个位置对应一个==参考点（Anchor Point）==，并输出一个[候选框](./08_BoxDecode.md)和各类别分数。训练数据则给出每个目标的**标注框和类别**。==正样本分配（Positive Sample Assignment）==要决定：哪些位置负责学习哪个目标，并为后续损失计算生成怎样的训练目标？
 
 ![Fig.1 训练标注给出人 G1 和沙发 G2 的框；分配器决定哪些预测位置分别学习它们](/ComputerVision/YOLOSeries/10_assignment_overview.png)
 
@@ -23,7 +23,7 @@ tags:
 2. **用当前预测选正样本。**对每个目标，比较框内候选点的**对应类别分数**和**预测框与标注框的贴合程度**；最终 `A、E` 负责“人”，`B、C` 负责“沙发”。`B` 虽在两个框内，最终只归属一个目标。[YOLOv8 v8.3.0 分配器源码](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/utils/tal.py)
 3. **区分背景与负样本。**“背景区域”描述图像位置；==负样本（Negative Sample）==是**最终没分给任何标注目标的训练位置**，其各类别目标分数均为 `0`。框外的 `D` 是负样本，框内但未入选的点也是负样本，训练时同样按背景处理。
 
-这两步用于**训练**。推理时没有标注框，也不做正样本分配；预测结果的[类别分数筛选与 NMS](./09_NMS.md)属于后处理。
+这些步骤只用于**训练**。推理时没有标注框，也不做正样本分配；预测结果的[类别分数筛选与 NMS](./09_NMS.md)属于后处理。
 
 ### **1.2 为什么不能只按位置挑选**
 
@@ -95,9 +95,13 @@ $p_{a,c_g}$ 是位置 $a$ 对**标注类别**的分数；$u_{g,a}$ 是刚才算�
 
 图 4 中，`B` 的预测框恰好等于 `G2`，所以它对 `G2` 的 CIoU 为 `1`；对 `G1` 约为 `0.14880`。最终 `B` 负责 `G2`，`G1` 留下 `A、E`，`G2` 留下 `B、C`，`D` 是背景位置。
 
-### **3.2 分完以后，每个位置拿到什么**
+<a id="32-分完以后每个位置拿到什么"></a>
 
-正样本会得到它负责的**标注类别、标注框**和该类别的训练目标分数；背景位置的类别目标分数全为 `0`，不参与框和距离分布损失。类别目标分数不一定都是 `1`：源码先在**每个标注目标内部**，用入选位置的最大联合分数与最大定位质量对 $t$ 做归一化。[v8.3.0 `get_targets` 和归一化](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/utils/tal.py)、[框与分类损失的使用位置](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/utils/loss.py)
+### **3.2 分完以后，怎样生成 `target_scores`**
+
+归属确定后，每个正样本拿到所负责目标的**标注框**，以及一组按类别排列的==训练目标分数（Target Scores）==，源码变量名为 `target_scores`。它在所属类别上可能是非零值，其余类别都是 `0`；负样本的各类别分数全为 `0`。因此，`target_scores` 是一张“位置 × 类别”的分数表，而不是每个位置只有一个分数。[v8.3.0 `get_targets` 源码](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/utils/tal.py)
+
+第 2.3 节的联合分数 $t$ 用来**选位置**。位置确定后，源码在**每个标注目标内部**，用最终入选位置的最大 $t$ 和最大定位质量 $u$ 对它归一化，再填进 `target_scores` 对应的类别。这一步得到的训练目标分数不一定是 `1`，也不直接等于 $t$ 或 $u$。[v8.3.0 分配器的归一化步骤](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/utils/tal.py)
 
 若 $P_g$ 是最终归属目标 $g$ 的位置集合，该目标类别的训练分数为：
 
@@ -108,7 +112,19 @@ y_{a,c_g}=
 \qquad a\in P_g.
 $$
 
-其中 $\varepsilon$ 是防止除零的小常数。图 3 的例子中，`G1` 的 `E` 得到 `1`、`A` 约为 `0.0286`；`G2` 的 `C` 得到 `1`、`B` 约为 `0.9014`。这说的是**类别训练目标的强弱**，不是推理时给框显示的类别概率。框损失和==分布焦点损失（Distribution Focal Loss）==（源码类名 `DFLoss`）只用正样本，类别损失则比较所有位置的类别输出与这些目标分数。[YOLOv8 v8.3.0 损失源码](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/utils/loss.py)
+其中 $\varepsilon$ 是防止除零的小常数。沿用图 3 的五个位置，结果如下（保留四位小数）：
+
+| 位置 | 最终归属 | 对“人”的目标分数 | 对“沙发”的目标分数 |
+| --- | --- | ---: | ---: |
+| `A` | `G1` | `0.0286` | `0` |
+| `B` | `G2` | `0` | `0.9014` |
+| `C` | `G2` | `0` | `1.0000` |
+| `D` | 无 | `0` | `0` |
+| `E` | `G1` | `1.0000` | `0` |
+
+例如，`A` 当前对“人”的预测分数是 `0.80`，分配后给它的训练目标分数却是 `0.0286`：前者来自检测头，后者由当前预测与标注共同算出。`C、E` 在这个例子中达到 `1`，是因为它们的预测框恰好与所负责的标注框重合；一般不要求每个目标都有分数为 `1` 的位置。这些分数用于**训练**，不是推理时给框显示的类别概率。[v8.3.0 分配器源码](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/utils/tal.py)
+
+[BCE 分类损失](./12_BCE_ClassLoss.md)比较所有位置的类别预测与这张分数表；[CIoU 框损失](./11_CIoU_BoxLoss.md)和==分布焦点损失（Distribution Focal Loss）==（源码类名 `DFLoss`）只计算正样本，并用对应的目标分数加权。[YOLOv8 v8.3.0 损失源码](https://github.com/ultralytics/ultralytics/blob/v8.3.0/ultralytics/utils/loss.py)
 
 ### **3.3 为什么分配结果会变化**
 
