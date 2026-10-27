@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="dfl-bins-title dfl-bins-desc">
+<title id="dfl-bins-title">目标距离二点三格的相邻档位权重</title>
+<desc id="dfl-bins-desc">目标距离二点三位于第二档和第三档之间，距第二档零点三格，距第三档零点七格。因此第二档得到零点七的目标权重，第三档得到零点三。</desc>
+<rect width="1200" height="360" fill="#fbfaf7"/>
+<g font-family="Noto Sans SC, PingFang SC, Microsoft YaHei, sans-serif">
+<text x="600" y="48" text-anchor="middle" font-size="27" font-weight="650" fill="#25334a">2.3 格落在第 2 档与第 3 档之间</text>
+<text x="600" y="78" text-anchor="middle" font-size="17" font-weight="400" fill="#53627a">越靠近目标距离，得到的目标权重越大</text>
+<line x1="240" y1="152" x2="960" y2="152" stroke="#7d8da1" stroke-width="2"/>
+<line x1="440" y1="140" x2="440" y2="164" stroke="#25334a" stroke-width="2"/>
+<line x1="840" y1="140" x2="840" y2="164" stroke="#25334a" stroke-width="2"/>
+<circle cx="560" cy="152" r="9" fill="#df6158" stroke="#25334a" stroke-width="1"/>
+<text x="440" y="130" text-anchor="middle" font-size="19" font-weight="600" fill="#25334a">第 2 档</text>
+<text x="840" y="130" text-anchor="middle" font-size="19" font-weight="600" fill="#25334a">第 3 档</text>
+<text x="560" y="121" text-anchor="middle" font-size="18" font-weight="650" fill="#ba4f48">目标 2.3</text>
+<line x1="440" y1="188" x2="560" y2="188" stroke="#228f86" stroke-width="3"/>
+<line x1="560" y1="188" x2="840" y2="188" stroke="#7d8da1" stroke-width="3"/>
+<line x1="440" y1="180" x2="440" y2="196" stroke="#228f86" stroke-width="2"/>
+<line x1="560" y1="180" x2="560" y2="196" stroke="#228f86" stroke-width="2"/>
+<line x1="840" y1="180" x2="840" y2="196" stroke="#7d8da1" stroke-width="2"/>
+<text x="500" y="216" text-anchor="middle" font-size="17" font-weight="400" fill="#228f86">相距 0.3 格</text>
+<text x="700" y="216" text-anchor="middle" font-size="17" font-weight="400" fill="#53627a">相距 0.7 格</text>
+<rect x="276" y="252" width="280" height="64" rx="8" fill="#e8f4f1" stroke="#228f86" stroke-width="1.5"/>
+<rect x="644" y="252" width="280" height="64" rx="8" fill="#f2f4f6" stroke="#aab9c7" stroke-width="1.5"/>
+<text x="416" y="290" text-anchor="middle" font-size="19" font-weight="650" fill="#166d65">第 2 档目标权重 0.7</text>
+<text x="784" y="290" text-anchor="middle" font-size="19" font-weight="650" fill="#25334a">第 3 档目标权重 0.3</text>
+</g></svg>
